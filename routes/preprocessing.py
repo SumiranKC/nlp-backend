@@ -10,7 +10,7 @@ preprocessing_bp = Blueprint('preprocessing', __name__)
 nlp = spacy.load("en_core_web_sm")
 
 # @preprocessing_bp.route('/api/preprocess', methods=['POST'])
-@preprocessing_bp.route('/api/preprocess', methods=['POST', 'OPTIONS'])
+@preprocessing_bp.route('/preprocess', methods=['POST', 'OPTIONS'])
 def preprocess_text():
     data = request.json or {}
     raw_text = data.get('text', '')

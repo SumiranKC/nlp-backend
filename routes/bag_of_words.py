@@ -3,7 +3,8 @@ import re
 
 bag_of_words_bp = Blueprint('bag_of_words', __name__)
 
-@bag_of_words_bp.route('/api/bag-of-words', methods=['POST', 'OPTIONS'])
+# @bag_of_words_bp.route('/api/bag-of-words', methods=['POST', 'OPTIONS'])
+@bag_of_words_bp.route('/bag-of-words', methods=['POST', 'OPTIONS'])
 def bag_of_words():
     data = request.json or {}
     raw_text = data.get('text', '')

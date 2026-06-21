@@ -12,19 +12,15 @@ app = Flask(__name__)
 
 # Apply comprehensive CORS policies to verify local web app handshakes securely
 # CORS(app, resources={r"/api/*": {"origins": "*"}})
-CORS(app, resources={
-    r"/api/*": {
-        "origins": "*",
-        "methods": ["POST", "GET", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Authorization"]
-    }
-})
+# backend/app.py
+# Open CORS globally across all incoming paths
+CORS(app, resources={r"/*": {"origins": "*"}})
 
-# Register the independent module Blueprints into the live operational engine
-app.register_blueprint(preprocessing_bp)
-app.register_blueprint(bag_of_words_bp)
-app.register_blueprint(tfidf_bp)
-app.register_blueprint(embeddings_bp)
+# Register blueprints with an explicit global prefix modifier
+app.register_blueprint(preprocessing_bp, url_prefix='/api')
+app.register_blueprint(bag_of_words_bp, url_prefix='/api')
+app.register_blueprint(tfidf_bp, url_prefix='/api')
+app.register_blueprint(embeddings_bp, url_prefix='/api')
 
 if __name__ == '__main__':
     import os
