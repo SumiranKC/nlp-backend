@@ -11,7 +11,14 @@ from routes.embeddings import embeddings_bp
 app = Flask(__name__)
 
 # Apply comprehensive CORS policies to verify local web app handshakes securely
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+# CORS(app, resources={r"/api/*": {"origins": "*"}})
+CORS(app, resources={
+    r"/api/*": {
+        "origins": "*",
+        "methods": ["POST", "GET", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }
+})
 
 # Register the independent module Blueprints into the live operational engine
 app.register_blueprint(preprocessing_bp)
