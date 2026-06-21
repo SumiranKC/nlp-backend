@@ -39,3 +39,5 @@ tornado==6.4.2
 traitlets==5.14.3
 wcwidth==0.2.13
 Werkzeug==3.1.8
+
+https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.0/en_core_web_sm-3.7.0.tar.gz
