@@ -1,4 +1,3 @@
-# backend/routes/preprocessing.py
 from flask import Blueprint, request, jsonify
 import re
 import spacy
@@ -6,7 +5,7 @@ import spacy
 preprocessing_bp = Blueprint('preprocessing', __name__)
 
 # Load the comprehensive, industry-standard English language model pipeline
-# It automatically bundles extensive stopword files and context-aware lemma maps
+# Automatically bundle extensive stopword files and context-aware lemma maps
 nlp = spacy.load("en_core_web_sm")
 
 # @preprocessing_bp.route('/api/preprocess', methods=['POST'])

@@ -1,30 +1,32 @@
+# backend/routes/bag_of_words.py
 from flask import Blueprint, request, jsonify
-import re
+from collections import Counter
 
 bag_of_words_bp = Blueprint('bag_of_words', __name__)
 
-# @bag_of_words_bp.route('/api/bag-of-words', methods=['POST', 'OPTIONS'])
 @bag_of_words_bp.route('/bag-of-words', methods=['POST', 'OPTIONS'])
-def bag_of_words():
+def compute_bag_of_words():
+    # Handle incoming CORS preflight smoothly
+    if request.method == 'OPTIONS':
+        return '', 200
+
     data = request.json or {}
-    raw_text = data.get('text', '')
+    # Expecting an array of preprocessed, tokenized words from the frontend
+    tokens = data.get('tokens', [])
     
-    # Standard clean and split tokenization
-    lowercased_clean = re.sub(r'[^\w\s]', '', raw_text.lower())
-    tokens = [t for t in lowercased_clean.split() if t]
+    if not tokens:
+        return jsonify({"vocab": {}, "vector": []})
+
+    # Count the raw frequencies of each token
+    counts = Counter(tokens)
     
-    # Extract alpha-sorted unique vocabulary terms
-    vocabulary = sorted(list(set(tokens)))
+    # Sort vocabulary alphabetically to keep the vector layout consistent
+    vocab = sorted(list(counts.keys()))
     
-    # Compute frequency frequencies mapping matrix
-    frequency_map = {}
-    for token in tokens:
-        frequency_map[token] = frequency_map.get(token, 0) + 1
-        
-    vector_array = [frequency_map.get(word, 0) for word in vocabulary]
+    # Generate the sequential feature vector array mapped to our vocabulary index
+    vector = [counts[word] for word in vocab]
     
     return jsonify({
-        "vocabulary": vocabulary,
-        "frequency_map": frequency_map,
-        "vector_array": vector_array
+        "vocab": vocab,
+        "vector": vector
     })
