@@ -1,52 +1,61 @@
 # backend/routes/tfidf.py
 from flask import Blueprint, request, jsonify
-import re
+import spacy
 import math
 
 tfidf_bp = Blueprint('tfidf', __name__)
+nlp = spacy.load("en_core_web_sm")
 
-def get_tokens(text):
-    lowercased_clean = re.sub(r'[^\w\s]', '', text.lower())
-    return [t for t in lowercased_clean.split() if t]
+@tfidf_bp.route('/tfidf', methods=['POST', 'OPTIONS'])
+def compute_tfidf():
+    if request.method == 'OPTIONS':
+        return '', 200
 
-@tfidf_bp.route('/api/tfidf', methods=['POST'])
-def tfidf_matrix():
     data = request.json or {}
-    docs = data.get('docs', [])
+    # Expecting an array of string documents: ["Doc 1 text...", "Doc 2 text..."]
+    documents = data.get('docs', [])
     
-    # Isolate active text entries and skip completely blank fields
-    valid_docs = [d for d in docs if d.strip()]
-    num_docs = len(valid_docs)
+    if not documents or not any(doc.strip() for doc in documents):
+        return jsonify({"vocabulary": [], "matrix": []})
+
+    # 1. Preprocess all documents using spaCy pipeline logic
+    processed_docs = []
+    all_vocab = set()
     
-    if num_docs == 0:
-        return jsonify({"matrix": []})
+    for doc_text in documents:
+        if not doc_text.strip():
+            processed_docs.append([])
+            continue
+        parsed = nlp(doc_text.lower())
+        tokens = [t.text for t in parsed if t.text.strip() and not t.is_stop and not t.is_punct]
+        processed_docs.append(tokens)
+        all_vocab.update(tokens)
         
-    # Process text matrix maps for every singular text segment uploaded
-    all_tokens = [get_tokens(doc) for doc in valid_docs]
+    vocabulary = sorted(list(all_vocab))
+    num_docs = len(documents)
     
-    # Gather a flat, distinct collection of keywords found across all logs
-    vocabulary = sorted(list(set([token for doc_tokens in all_tokens for token in doc_tokens])))
-    
-    matrix_data = []
-    for word in vocabulary:
-        # Evaluate term occurrences for every document container separately
-        tfs = [doc_tokens.count(word) for doc_tokens in all_tokens]
+    if not vocabulary:
+        return jsonify({"vocabulary": [], "matrix": []})
+
+    # 2. Compute TF-IDF Matrix Spaces
+    matrix = []
+    for tokens in processed_docs:
+        doc_scores = []
+        doc_len = len(tokens)
         
-        # Count how many total documents contain this target token
-        df = sum(1 for doc_tokens in all_tokens if word in doc_tokens)
-        
-        # Smooth scaling evaluation: log(Total Documents / Document Frequency) + 1
-        idf = math.log(num_docs / df) + 1 if df > 0 else 1
-        
-        # Calculate individual matrix scores
-        tfidfs = [tf * idf for tf in tfs]
-        
-        matrix_data.append({
-            "word": word,
-            "tfs": tfs,
-            "df": df,
-            "idf": idf,
-            "tfidfs": tfidfs
-        })
-        
-    return jsonify({"matrix": matrix_data})
+        for term in vocabulary:
+            # Term Frequency (TF)
+            tf = tokens.count(term) / doc_len if doc_len > 0 else 0
+            
+            # Inverse Document Frequency (IDF)
+            docs_with_term = sum(1 for d in processed_docs if term in d)
+            # Smooth IDF layout calculation to avoid divisions by zero
+            idf = math.log((num_docs / (1 + docs_with_term))) + 1
+            
+            doc_scores.append(round(tf * idf, 4))
+        matrix.append(doc_scores)
+
+    return jsonify({
+        "vocabulary": vocabulary,
+        "matrix": matrix
+    })
